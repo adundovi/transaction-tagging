@@ -1,0 +1,16 @@
+[package]
+name = "finance-tagging"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+db = { path = "backend/db" }
+console_error_panic_hook = "0.1.7"
+console_log = "0.2.0"
+log = "0.4.14"
+reqwasm = "0.4.1"
+serde = "1.0.136"
+sycamore = { version = "0.8.0-beta.5", features = ["suspense"] }
+chrono = { version = "0.4", features = ["serde"] }

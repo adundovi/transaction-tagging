@@ -1,0 +1,21 @@
+# Compiled directories
+/target
+/dist
+/backend/target
+
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Lock files
+Cargo.lock
+package-lock.json
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env
