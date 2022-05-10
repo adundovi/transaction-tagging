@@ -47,7 +47,7 @@ async fn main() -> Result<(), std::io::Error> {
                 .service(get_transactions)
             )
     })
-    .bind(("127.0.0.1", 8081))?
+    .bind(("127.0.0.1", 9091))?
     .run()
     .await
 }

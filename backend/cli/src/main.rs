@@ -10,7 +10,7 @@ fn main() {
     // Get all submenus
     let submenus: Vec<Menu> = vec![
         db::menu(),
-        //transactions::menu(),
+        transactions::menu(),
     ];
 
     // ...generate calp::App from them...
