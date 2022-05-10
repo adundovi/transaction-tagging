@@ -27,7 +27,7 @@ async fn create() -> Result::<SqliteConnection, sqlx::Error> {
                 tags            TEXT,
                 comment         TEXT,
                 url             TEXT,
-                UNIQUE(transaction_reference)
+                UNIQUE(transaction_reference, iban_sender)
             )").execute(&mut conn).await?;
 
     Ok(conn)

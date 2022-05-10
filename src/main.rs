@@ -73,7 +73,7 @@ async fn TransactionList<G: Html>(cx: Scope<'_>) -> View<G> {
                 if t.sender_receiver_name.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
                 if t.description.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
                 if t.transaction_reference.contains(f) { return true; }
-                if t.iban_sender.contains(f) { return true; }
+                if t.iban_sender.to_lowercase().contains(f) { return true; }
                 if t.send_amount.unwrap_or_default().to_string().contains(f) { return true; }
                 if t.receive_amount.unwrap_or_default().to_string().contains(f) { return true; }
                 if t.value_date.to_string().contains(f) { return true; }
@@ -270,7 +270,7 @@ async fn TransactionList<G: Html>(cx: Scope<'_>) -> View<G> {
         div(class="basis-1/6 text-green-500") {
             "Uplaćeno: " (pp_currency(*transaction_receive_sum.get())) " kn"
         }
-        div(class="basis-1/6 text-green-500") {
+        div(class="basis-1/6 font-light") {
             "Razlika: " (pp_currency(
                     *transaction_receive_sum.get() - *transaction_send_sum.get()
             )) " kn"
