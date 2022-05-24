@@ -6,6 +6,7 @@ use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Connection, ConnectOptions, Executor};
 use futures::executor::block_on;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use encoding_rs_io::DecodeReaderBytes;
 
 use utils::{date_serializer, currency_serializer_option, currency_serializer};
 
@@ -35,15 +36,23 @@ pub fn load_csv<T: DeserializeOwned>(filename: &str) -> Result<Vec<T>, Box<dyn E
     let mut items: Vec<T> = Vec::new();
 
     let file = File::open(filename)?;
+    // decode UTF-16LE to UTF-8
+    let file_as_utf8 = DecodeReaderBytes::new(file);
+
     let mut rdr = csv::ReaderBuilder::new()
                     .delimiter(b'\t')
                     .has_headers(false)
                     .double_quote(true)
+                    .flexible(true)
                     .escape(Some(b'\\'))
-                    .from_reader(file);
-    for record in rdr.deserialize() {
-        let p: T = match record {
-            Ok(result) => result,
+                    .from_reader(file_as_utf8);
+
+    for record in rdr.records().skip(2) { // skip headers
+        let record_typed = record?.deserialize(None);
+        let p: T = match record_typed {
+            Ok(result) => {
+                result
+            },
             Err(err) => {
                 println!("{:?}", err);
                 continue;

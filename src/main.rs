@@ -39,6 +39,28 @@ async fn TransactionItem<'a, G: Html>(cx: Scope<'a>, p: TransactionItemProps<'a>
     }
 }*/
 
+/*
+function getWidth() {
+  return Math.max(
+    document.body.scrollWidth,
+    document.documentElement.scrollWidth,
+    document.body.offsetWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth
+  );
+}
+
+function getHeight() {
+  return Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight,
+    document.documentElement.clientHeight
+  );
+}
+*/
+
 #[component]
 async fn TransactionList<G: Html>(cx: Scope<'_>) -> View<G> {
     let filter = create_signal(cx, String::new());
@@ -110,8 +132,8 @@ async fn TransactionList<G: Html>(cx: Scope<'_>) -> View<G> {
 
     let pp_currency = |c: f64| -> String {
         let int = (c.trunc() as i64).to_formatted_string(&Locale::hr);
-        let frac = (c.fract()*100.0).round();
-        format!("{},{}", int, frac)
+        let frac = (c.fract()*100.0).abs().round();
+        format!("{},{:0>2}", int, frac)
     };
 
     view! { cx,
