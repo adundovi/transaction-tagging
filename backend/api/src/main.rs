@@ -20,8 +20,11 @@ async fn get_transactions(
     
     let conn = pool.get_ref();
 
-    let transactions = sqlx::query_as::<_, Transaction>("SELECT * FROM transactions;")
-        .fetch_all(conn).await.map_err(|_|  actix_web::error::ErrorBadGateway("Query"))?;
+    let transactions = sqlx::query_as::<_, Transaction>(
+        "SELECT * FROM transactions ORDER BY value_date DESC, id DESC;"
+        )
+        .fetch_all(conn).await
+        .map_err(|_|  actix_web::error::ErrorBadGateway("Query"))?;
 
     Ok(HttpResponse::Ok().json(&transactions))
 }
