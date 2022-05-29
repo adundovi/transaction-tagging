@@ -1,112 +1,30 @@
 use std::str::FromStr;
 use std::fs::File;
-use std::error::Error;
-use chrono::NaiveDate;
-use sqlx::sqlite::SqliteConnectOptions;
-use sqlx::{Connection, ConnectOptions, Executor};
+use std::fs::read;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::{Connection, ConnectOptions};
 use futures::executor::block_on;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use encoding_rs_io::DecodeReaderBytes;
 
-use utils::{date_serializer, currency_serializer_option, currency_serializer};
+use db::models::transaction::{Transaction, NewCSVTransaction};
+use utils::csv::load_csv;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub struct NewTransaction {
-    pub transaction_no: i32,
-    #[serde(with = "date_serializer")]
-    pub value_date: NaiveDate,
-    #[serde(with = "date_serializer")]
-    pub execution_date: NaiveDate,
-    pub description: Option<String>,
-    pub iban_sender: String,
-    #[serde(with = "currency_serializer_option")]
-    pub send_amount: Option<f64>,
-    #[serde(with = "currency_serializer_option")]
-    pub receive_amount: Option<f64>,
-    #[serde(with = "currency_serializer")]
-    pub account_balance: f64,
-    pub sender_reference_number: Option<String>,
-    pub receiver_reference_number: Option<String>,
-    pub sender_receiver_name: Option<String>,
-    pub sender_receiver_place: Option<String>,
-    pub transaction_reference: String,
-}
+async fn insert_transactions_from_csv(filename: &str) -> Result::<(), sqlx::Error> {
+    let file = read(filename)?;
+    let new_transactions: Vec<NewCSVTransaction> = load_csv(&file).unwrap();
 
-pub fn load_csv<T: DeserializeOwned>(filename: &str) -> Result<Vec<T>, Box<dyn Error>> {
-    let mut items: Vec<T> = Vec::new();
+    let mut pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite://sqlite.db").await?;
 
-    let file = File::open(filename)?;
-    // decode UTF-16LE to UTF-8
-    let file_as_utf8 = DecodeReaderBytes::new(file);
-
-    let mut rdr = csv::ReaderBuilder::new()
-                    .delimiter(b'\t')
-                    .has_headers(false)
-                    .double_quote(true)
-                    .flexible(true)
-                    .escape(Some(b'\\'))
-                    .from_reader(file_as_utf8);
-
-    for record in rdr.records().skip(2) { // skip headers
-        let record_typed = record?.deserialize(None);
-        let p: T = match record_typed {
-            Ok(result) => {
-                result
-            },
-            Err(err) => {
-                println!("{:?}", err);
-                continue;
-            }
-        };
-        items.push(p);
-    }
-    Ok(items)
-}
-
-async fn insert_transactions_from_csv(filename: &str) -> Result::<u32, sqlx::Error> {
-    let new_transactions: Vec<NewTransaction> = load_csv(filename).unwrap();
-
-    let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
-        .connect().await?;
+    let mut conn = pool.acquire().await?;
+    //let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
+    //    .connect().await?;
     
     for t in new_transactions.iter() {
-        sqlx::query("
-                INSERT OR IGNORE INTO transactions
-                (
-                    value_date,
-                    execution_date,
-                    description,
-                    iban_sender,
-                    send_amount,
-                    receive_amount,
-                    account_balance,
-                    sender_reference_number,
-                    receiver_reference_number,
-                    sender_receiver_name,
-                    sender_receiver_place,
-                    transaction_reference,
-                    tags,
-                    comment,
-                    url
-                )
-                VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, '', '', '')")
-            .bind(&t.value_date.format("%Y-%m-%d").to_string())
-            .bind(&t.execution_date.format("%Y-%m-%d").to_string())
-            .bind(&t.description)
-            .bind(&t.iban_sender)
-            .bind(t.send_amount)
-            .bind(t.receive_amount)
-            .bind(t.account_balance)
-            .bind(&t.sender_reference_number)
-            .bind(&t.receiver_reference_number)
-            .bind(&t.sender_receiver_name)
-            .bind(&t.sender_receiver_place)
-            .bind(&t.transaction_reference)
-            .execute(&mut conn).await?;
+        Transaction::insert(&mut conn, &t);
     }
 
-    Ok(32)
+    Ok(())
 }
 
 pub fn f(args: &clap::ArgMatches) {

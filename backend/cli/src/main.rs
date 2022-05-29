@@ -6,7 +6,8 @@ mod transactions;
 
 use menu::{Menu, main_menu};
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get all submenus
     let submenus: Vec<Menu> = vec![
         db::menu(),
@@ -29,4 +30,6 @@ fn main() {
     for m in submenus {
         m.process(&cli_builder);
     }
+
+    Ok(())
 }

@@ -1,3 +1,5 @@
+pub mod csv;
+
 pub mod date_serializer {
     use chrono::{Datelike, NaiveDate};
     use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};

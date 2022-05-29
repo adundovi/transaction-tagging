@@ -1,8 +1,10 @@
 use sycamore::prelude::*;
-use sycamore::suspense::Suspense;
+use sycamore::{futures::spawn_local_scoped, suspense::Suspense};
 use sycamore_router::{HistoryIntegration, Router};
 use reqwasm::http::Request;
 use db::models::transaction::Transaction;
+use web_sys::{HtmlInputElement, FormData, Blob};
+//use futures::executor::block_on;
 
 mod components;
 
@@ -30,6 +32,50 @@ async fn fetch_transactions() -> Result<Vec<Transaction>, reqwasm::Error> {
     Ok(body)
 }
 
+async fn send_csv_file(blob: &Blob) -> Result<(), reqwasm::Error> {
+    let url = format!("{}/transactions/upload", API_BASE_URL);
+    let f_data = FormData::new().unwrap();
+    f_data.append_with_blob("csvFile", blob);
+    let resp = Request::post(&url).body(f_data).send().await;
+    Ok(())
+}
+
+#[component]
+async fn UploadPage<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+    let upload_ref = create_node_ref(cx);
+    let progress = create_signal(cx, String::new());
+        
+    progress.set("First".to_string());
+
+    let upload_file = move |_| {
+        spawn_local_scoped(cx, async move {
+            let t = upload_ref.get::<DomNode>().unchecked_into::<HtmlInputElement>();
+            let f = send_csv_file(&t.files().unwrap().item(0).unwrap()).await;
+            progress.set(
+                format!("Sending {}", t.files().unwrap().item(0).unwrap().name())
+            );
+        })
+    };
+
+    view! { cx,
+    div(class="container mx-auto max-w-7xl p-6 text-white") {
+        div(class="grid grid-cols-1 gap-y-6 text-center") {
+            label(for="csv-file") {
+                "Baza podataka transakcija nadopunjuje se postavljanjem CSV datoteke putem sljedeće poveznice"
+            }
+            input(
+                ref=upload_ref,
+                on:change=upload_file,
+                accept="text/csv",
+                type="file",
+                class="p-5 mx-auto text-right font-light block basis-full hover:underline",
+                id="csv-file", name="csv-file")
+            (*progress.get())
+        }
+    }
+    }
+}
+
 #[component]
 async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
     
@@ -54,7 +100,8 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
                 },
                 AppRoutes::Upload => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Ažuriranje transakcija" }
-                    },
+                    UploadPage()
+                },
                 AppRoutes::Graphs => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Vizualizacija" }
                     Suspense {
