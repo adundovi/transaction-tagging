@@ -24,9 +24,9 @@ pub async fn UploadPage<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     let upload_file = move |_| {
         spawn_local_scoped(cx, async move {
             let t = upload_ref.get::<DomNode>().unchecked_into::<HtmlInputElement>();
-            let _f = send_csv_file(&t.files().unwrap().item(1).unwrap()).await;
+            let _f = send_csv_file(&t.files().unwrap().item(0).unwrap()).await;
             progress.set(
-                format!("Sending {}", t.files().unwrap().item(1).unwrap().name())
+                format!("Sending {}", t.files().unwrap().item(0).unwrap().name())
             );
         })
     };
