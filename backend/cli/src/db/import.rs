@@ -1,6 +1,5 @@
 use std::str::FromStr;
-use std::fs::File;
-use std::fs::read;
+use std::fs::{read, File};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{Connection, ConnectOptions};
 use futures::executor::block_on;
@@ -15,10 +14,7 @@ async fn insert_transactions_from_csv(filename: &str) -> Result::<(), sqlx::Erro
     let mut pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect("sqlite://sqlite.db").await?;
-
     let mut conn = pool.acquire().await?;
-    //let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
-    //    .connect().await?;
     
     for t in new_transactions.iter() {
         Transaction::insert(&mut conn, &t);

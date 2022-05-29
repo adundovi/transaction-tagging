@@ -1,9 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use sqlx::{
-    Executor,
     FromRow,
     types::chrono::NaiveDate,
-    sqlite::SqliteConnection,
     Sqlite,
     pool::PoolConnection
 };

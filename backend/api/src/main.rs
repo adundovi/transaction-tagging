@@ -54,7 +54,7 @@ async fn post_csv_with_transactions(
     
     let new_transactions: Vec<NewCSVTransaction> = load_csv(&bytes).unwrap();
     for t in new_transactions.iter() {
-        Transaction::insert(&mut conn, &t);
+        Transaction::insert(&mut conn, &t).await.map_err(|_| actix_web::error::ErrorBadGateway("Error inserting"))?;
     }
 
     Ok(HttpResponse::Ok().finish())
