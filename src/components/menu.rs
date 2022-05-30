@@ -15,6 +15,8 @@ pub enum AppRoutes {
     Graphs,
     #[to("/upload")]
     Upload,
+    #[to("/transaction/<id>")]
+    Transaction(u32),
     #[not_found]
     NotFound,
 }

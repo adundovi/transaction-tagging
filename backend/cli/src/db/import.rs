@@ -17,7 +17,7 @@ async fn insert_transactions_from_csv(filename: &str) -> Result::<(), sqlx::Erro
     let mut conn = pool.acquire().await?;
     
     for t in new_transactions.iter() {
-        Transaction::insert(&mut conn, &t);
+        Transaction::insert(&mut conn, &t).await?;
     }
 
     Ok(())

@@ -1,7 +1,6 @@
 use sycamore::prelude::*;
 use sycamore::suspense::Suspense;
 use sycamore_router::{HistoryIntegration, Router};
-use reqwasm::http::Request;
 
 mod components;
 
@@ -14,6 +13,9 @@ use components::{
     transaction_list::{
         TransactionList
     },
+    transaction_details::{
+        TransactionDetails
+    },
     graphs::{
         BalanceGraph
     },
@@ -22,26 +24,9 @@ use components::{
     }
 };
 
-use db::models::transaction::Transaction;
-
-// API that counts visits to the web-page
-const API_BASE_URL: &str = "/api";
-
-async fn fetch_transactions() -> Result<Vec<Transaction>, reqwasm::Error> {
-    let url = format!("{}/transactions", API_BASE_URL);
-    let resp = Request::get(&url).send().await?;
-    let body = resp.json::<Vec<Transaction>>().await?;
-    Ok(body)
-}
-
 #[component]
 async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
     
-    let mut transactions = fetch_transactions().await.unwrap();
-    transactions.sort_by_key(|t| t.value_date);
-    transactions.reverse();
-    let transactions_s = create_signal(cx, transactions);
-
     view! { cx,
         div(class="app") {
             (match props.route.get().as_ref() {
@@ -51,10 +36,12 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
                         fallback: view! { cx, 
                             div(class="text-white text-center max-w-full") { "Učitavanje..." }
                         },
-                        TransactionList {
-                            transactions: transactions_s
-                        }
+                        TransactionList()
                     }
+                },
+                AppRoutes::Transaction(id) => view! { cx,
+                    h1(class="text-xl pt-5 text-white") { "Detalji transakcije" }
+                    TransactionDetails(id.clone())
                 },
                 AppRoutes::Upload => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Ažuriranje transakcija" }
@@ -66,9 +53,7 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
                         fallback: view! { cx,
                             div(class="text-white text-center max-w-full") { "Učitavanje..." }
                         },
-                        BalanceGraph {
-                            transactions: transactions_s
-                        }
+                        BalanceGraph()
                     }
                 },
                 AppRoutes::NotFound => view! { cx,

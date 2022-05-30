@@ -10,30 +10,20 @@ use futures::TryStreamExt;
 use sqlx::Row;
 
 use db::models::transaction::Transaction;
-use db::models::tag::Tag;
 
-async fn add_tag(id: i32, tag: String) -> Result<(), sqlx::Error> {
+async fn new_comment(id: i32, comment: String) -> Result<(), sqlx::Error> {
     let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
         .connect().await?;
         
-    let tag_id: i32 = 
-        sqlx::query("SELECT * FROM tags WHERE tag = $1")
-        .bind(&tag)
-        .map(|row: SqliteRow| {
-            row.try_get("id")
-        })
-        .fetch_one(&mut conn).await??;
-
-    let _ = sqlx::query("INSERT OR IGNORE INTO trans_tags_relations
-                (transaction_id, tag_id) VALUES ($1, $2)")
+    let _ = sqlx::query("UPDATE transactions SET comment = $1 WHERE id = $2")
+            .bind(comment)
             .bind(id)
-            .bind(tag_id)
             .execute(&mut conn).await?;
    
     Ok(())
 }
 
-async fn remove_tag(id: i32, tag: String) -> Result<(), sqlx::Error> {
+async fn remove_comment(id: i32, tag: String) -> Result<(), sqlx::Error> {
     let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
         .connect().await?;
     
@@ -45,7 +35,7 @@ async fn remove_tag(id: i32, tag: String) -> Result<(), sqlx::Error> {
         })
         .fetch_one(&mut conn).await??;
    
-    let _ = sqlx::query("DELETE FROM trans_tags_relations WHERE transaction_id = $1 AND tag_id = $2")
+    let _ = sqlx::query("DELETE FROM trans_comments_relations WHERE transaction_id = $1 AND tag_id = $2")
         .bind(id)
         .bind(tag_id)
         .execute(&mut conn).await?;
@@ -53,43 +43,35 @@ async fn remove_tag(id: i32, tag: String) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-async fn list_tags(id: i32) -> Result<(), sqlx::Error> {
+async fn list_comments(id: i32) -> Result<(), sqlx::Error> {
     let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
         .connect().await?;
    
-    #[derive(sqlx::FromRow)]
-    struct Tag { tag: String }
-
-    let tags = sqlx::query_as::<_, Tag>("
-            SELECT t.tag FROM transactions as tr
-                INNER JOIN trans_tags_relations as r
-                    ON r.transaction_id = tr.id
-                INNER JOIN tags as t
-                    ON t.id == r.tag_id WHERE tr.id = $1")
+    let comment: String = sqlx::query("SELECT comment FROM transactions WHERE id = $1")
         .bind(id)
-        .fetch_all(&mut conn).await?;
+        .map(|row: SqliteRow| {
+            row.try_get("comment")
+        })
+        .fetch_one(&mut conn).await??;
   
-    println!("Tags:");
-    for t in tags {
-        println!("\t{}", t.tag.clone());
-    }
+    println!("{}", comment.clone());
 
     Ok(())
 }
 
 pub fn f(args: &clap::ArgMatches) {
     match args.subcommand() {
-        Some(("add",  args)) => {
+        Some(("new",  args)) => {
             let id = match args.value_of("ID") {
                 Some(t) => t.parse::<i32>().ok(),
                 None => None,
             };
-            let tag = match args.value_of("TAG") {
+            let comment = match args.value_of("COMMENT") {
                 Some(t) => t.parse::<String>().ok(),
                 None => None,
             };
-            if id.is_some() && tag.is_some() {
-                let db = add_tag(id.unwrap(), tag.unwrap());
+            if id.is_some() && comment.is_some() {
+                let db = new_comment(id.unwrap(), comment.unwrap());
                 match block_on(db) {
                     Ok(_) => (),
                     Err(error) => panic!("Query error {:?}", error)
@@ -106,18 +88,18 @@ pub fn f(args: &clap::ArgMatches) {
                 None => None,
             };
             if id.is_some() && tag.is_some() {
-                let db = remove_tag(id.unwrap(), tag.unwrap());
+                let db = remove_comment(id.unwrap(), tag.unwrap());
                 match block_on(db) {
                     Ok(_) => (),
                     Err(error) => panic!("Query error {:?}", error)
                 };
             }
        },
-       Some(("list",  args)) => {
+       Some(("show",  args)) => {
             match args.value_of("ID") {
                 Some(i) => match i.parse::<i32>() {
                     Ok(i) => {
-                        let db = list_tags(i);
+                        let db = list_comments(i);
                         block_on(db);
                     },
                     Err(_) => print!("ID should be a number"),

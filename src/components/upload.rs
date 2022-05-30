@@ -26,14 +26,14 @@ pub async fn UploadPage<'a, G: Html>(cx: Scope<'a>) -> View<G> {
             let t = upload_ref.get::<DomNode>().unchecked_into::<HtmlInputElement>();
             let _f = send_csv_file(&t.files().unwrap().item(0).unwrap()).await;
             progress.set(
-                format!("Sending {}", t.files().unwrap().item(0).unwrap().name())
+                format!("{} successfully sent!", t.files().unwrap().item(0).unwrap().name())
             );
         })
     };
 
     view! { cx,
     div(class="container mx-auto max-w-8xl p-6 text-white") {
-        div(class="grid grid-cols-2 gap-y-6 text-center") {
+        div(class="grid grid-cols-1 gap-y-6 text-center") {
             label(for="csv-file") {
                 "Baza podataka transakcija nadopunjuje se postavljanjem CSV datoteke putem sljedeće poveznice"
             }

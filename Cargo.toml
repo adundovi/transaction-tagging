@@ -10,10 +10,11 @@ db = { path = "backend/db" }
 console_error_panic_hook = "0.1.7"
 console_log = "0.2.0"
 log = "0.4.14"
-reqwasm = "0.4.1"
-serde = "1.0.136"
+reqwasm = { version = "0.5", feature = ["json"] }
+serde = "1.0"
+serde_json = { version = "1.0" }
 sycamore = { version = "0.8.0-beta.6", features = ["suspense"] }
 sycamore-router = "0.8.0-beta.6"
 chrono = { version = "0.4", features = ["serde"] }
 num-format = "0.4.0"
-web-sys = { version = "0.3", features = ["Blob", "FormData", "File", "FileList", "HtmlInputElement"] }
+web-sys = { version = "0.3", features = ["Blob", "Element", "FormData", "File", "FileList", "HtmlInputElement"] }

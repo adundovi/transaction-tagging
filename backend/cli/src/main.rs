@@ -3,6 +3,7 @@ use clap::App;
 mod db;
 mod menu;
 mod transactions;
+mod tags;
 
 use menu::{Menu, main_menu};
 
@@ -12,6 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let submenus: Vec<Menu> = vec![
         db::menu(),
         transactions::menu(),
+        tags::menu(),
     ];
 
     // ...generate calp::App from them...

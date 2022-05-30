@@ -14,6 +14,9 @@ use sqlx::{
         SqlitePoolOptions,
     },
 };
+use serde::{Serialize, Deserialize};
+
+use futures_util::TryFutureExt;
 
 use db::models::transaction::{Transaction, NewCSVTransaction};
 use utils::csv::load_csv;
@@ -24,15 +27,43 @@ pub type Pool = SqlitePool;
 async fn get_transactions(
     pool: web::Data<Pool>) -> Result<HttpResponse, actix_web::Error> {
     
-    let conn = pool.get_ref();
+    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB"))?;
 
-    let transactions = sqlx::query_as::<_, Transaction>(
-        "SELECT * FROM transactions ORDER BY value_date DESC, id DESC;"
-        )
-        .fetch_all(conn).await
-        .map_err(|_|  actix_web::error::ErrorBadGateway("Query"))?;
+    let transactions = Transaction::get_all(&mut conn).await
+            .map_err(|_|  actix_web::error::ErrorBadGateway("Query"))?;
 
     Ok(HttpResponse::Ok().json(&transactions))
+}
+
+#[get("/transactions/{id}")]
+async fn get_transaction_by_id(
+    pool: web::Data<Pool>, chunks: web::Path<(u32,)>) -> Result<HttpResponse, actix_web::Error> {
+    let chunks = chunks.into_inner();
+
+    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB"))?;
+
+    let transaction = Transaction::get_by_id(&mut conn, chunks.0)
+        .map_err(|_|  actix_web::error::ErrorBadGateway("Query")).await?;
+
+    Ok(HttpResponse::Ok().json(&transaction))
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CommentUpdate {
+    comment: Option<String>,
+}
+
+#[post("/transactions/{id}/comment")]
+async fn post_transaction_comment_by_id(
+    pool: web::Data<Pool>, chunks: web::Path<(u32,)>, data: web::Json<CommentUpdate>) -> Result<HttpResponse, actix_web::Error> {
+    let chunks = chunks.into_inner();
+
+    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB"))?;
+
+    let transaction = Transaction::set_comment_by_id(&mut conn, chunks.0, &data.comment)
+        .map_err(|_|  actix_web::error::ErrorBadGateway("Query")).await?;
+
+    Ok(HttpResponse::Ok().json(&transaction))
 }
 
 #[post("/transactions/upload")]
@@ -80,6 +111,8 @@ async fn main() -> Result<(), std::io::Error> {
                 web::scope("/api")
                 .service(get_transactions)
                 .service(post_csv_with_transactions)
+                .service(get_transaction_by_id)
+                .service(post_transaction_comment_by_id)
             )
     })
     .bind(("127.0.0.1", 9091))?

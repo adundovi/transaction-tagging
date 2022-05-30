@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::menu::{Menu, Subcommand};
 
+mod comment;
 mod list;
 mod tags;
 
@@ -34,7 +35,7 @@ pub fn menu<'a>() -> Menu<'a> {
                          .required(true)
                          .index(1)
                         )
-                )
+            )
             .subcommand(
                 App::new("add")
                     .about("Add new tag")
@@ -66,6 +67,46 @@ pub fn menu<'a>() -> Menu<'a> {
         f: &tags::f
     };
     m.push_subcommand("tags", menu_tags);
+    
+    let menu_comment = Subcommand {
+        app: App::new("comment")
+            .about("Modify comments")
+            .subcommand(
+                App::new("show")
+                      .about("Display comment")
+                      .arg(
+                         Arg::new("ID")
+                         .help("Transaction ID")
+                         .required(true)
+                         .index(1)
+                        )
+            )
+            .subcommand(
+                App::new("new")
+                    .about("Write a comment")
+                    .arg(Arg::new("ID")
+                         .help("Transaction ID")
+                         .required(true)
+                         .index(1)
+                         )
+                    .arg(Arg::new("COMMENT")
+                         .help("String")
+                         .required(true)
+                         .index(2)
+                         )
+            )
+            .subcommand(
+                App::new("remove")
+                    .about("Remove comment")
+                    .arg(Arg::new("ID")
+                         .help("Transaction ID")
+                         .required(true)
+                         .index(1)
+                         )
+            ),
+        f: &comment::f
+    };
+    m.push_subcommand("comment", menu_comment);
 
     m
 }

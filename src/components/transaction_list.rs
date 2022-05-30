@@ -28,14 +28,16 @@ async fn TransactionItem<'a, G: Html>(cx: Scope<'a>, p: TransactionItemProps<'a>
     }
 }*/
 
-#[derive(Prop)]
-pub struct TransactionProps<'a> {
-    pub transactions: &'a ReadSignal<Vec<Transaction>>
-}
+// API that counts visits to the web-page
+const API_BASE_URL: &str = "/api";
 
 #[component]
-pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>, props: TransactionProps<'a>) -> View<G> {
-    let transactions = props.transactions.get();
+pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+
+    let mut transactions = Transaction::get_all(API_BASE_URL).await.unwrap();
+    transactions.sort_by_key(|t| t.value_date);
+    transactions.reverse();
+//    let transactions_s = create_signal(cx, transactions);
 
     let filter = create_signal(cx, String::new());
     let start_date = create_signal(cx, NaiveDate::from_ymd(2020, 1, 1));
@@ -65,7 +67,8 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>, props: TransactionProps
                 if t.send_amount.unwrap_or_default().to_string().contains(f) { return true; }
                 if t.receive_amount.unwrap_or_default().to_string().contains(f) { return true; }
                 if t.value_date.to_string().contains(f) { return true; }
-                if t.tags.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
+                if t.comment.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
+                //if t.tags.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
                 false
             })
         .cloned()
@@ -80,7 +83,6 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>, props: TransactionProps
     });
 
     let open_close_detailed_search = |_| detailed_search.set(!*detailed_search.get());
-    //let open_close_graph_box = |_| graph_box.set(!*graph_box.get());
     
     let pp_currency = |c: f64| -> String {
         let int = (c.trunc() as i64).to_formatted_string(&Locale::hr);
@@ -135,56 +137,59 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>, props: TransactionProps
                 div(class="basis-3/12") { "Datum" }
                 div(class="basis-3/12") { "Naziv i opis" }
                 div(class="basis-3/12") { "Iznos / HRK" }
-                div(class="basis-2/12") { "Oznake" }
+                div(class="basis-2/12") { "Oznake / Napomena" }
             }
             Indexed {
                 iterable: &transactions_s,
                 view: |cx, t| view! { cx,
-                div(class="p-2 hover:bg-amber-100") {
-                    div(class="flex flex-row gap-4 justify-items-start") {
-                        div(class="basis-1/12") { (t.id) }
-                        div(class="basis-3/12") { (t.value_date) }
-                        div(class="basis-3/12") {
-                            (t.sender_receiver_name.clone().unwrap_or_default())
-                        }
-                        div(class="basis-3/12") {
-                            (if t.send_amount.is_some() { 
+                a(href=format!("/transaction/{}", t.id)) {
+                    div(class="p-2 hover:bg-amber-100") {
+                        div(class="flex flex-row gap-4 justify-items-start") {
+                            div(class="basis-1/12") { (t.id) }
+                            div(class="basis-3/12") { (t.value_date) }
+                            div(class="basis-3/12") {
+                                (t.sender_receiver_name.clone().unwrap_or_default())
+                            }
+                            div(class="basis-3/12") {
+                                (if t.send_amount.is_some() { 
                                     view! { cx, span(class="text-red-500") {
                                         (t.send_amount.unwrap_or_default()) 
                                     } }
-                            } else {
+                                } else {
                                     view! { cx, span(class="text-green-500") {
                                         (t.receive_amount.unwrap_or_default())
                                     } }
-                            }) 
-                        }
-                        div(class="basis-2/12") { }
-                    }
-                    div(class="flex flex-row gap-4 justify-items-start text-sm") {
-                        div(class="basis-1/12") { }
-                        div(class="basis-3/12 text-gray-500") {
-                            div { "Izvršeno: " (t.execution_date) }
-                            div {
-                                (t.receiver_reference_number.clone().unwrap_or_default())
+                                }) 
                             }
-                            div { "IBAN: " (t.iban_sender) }
+                            div(class="basis-2/12") { }
                         }
-                        div(class="basis-3/12 text-gray-700") {
-                            div { (t.description.clone().unwrap_or_default()) }
-                            div { (t.sender_receiver_place.clone().unwrap_or_default()) }
-                        }
-                        div(class="basis-3/12 text-gray-500") {
-                            div { "Saldo: " (t.account_balance) }
-                            div { "ID: " (t.transaction_reference) }
-                        }
-                        div(class="basis-2/12") {
-                            (
-                                t.tags.clone()
-                                .unwrap_or_default()
-                                .split(";")
-                                .map(move |x| format!("{} ",  x) )
-                                .collect::<String>()
-                            )
+                        div(class="flex flex-row gap-4 justify-items-start text-sm") {
+                            div(class="basis-1/12") { }
+                            div(class="basis-3/12 text-gray-500") {
+                                div { "Izvršeno: " (t.execution_date) }
+                                div {
+                                    (t.receiver_reference_number.clone().unwrap_or_default())
+                                }
+                                div { "IBAN: " (t.iban_sender) }
+                            }
+                            div(class="basis-3/12 text-gray-700") {
+                                div { (t.description.clone().unwrap_or_default()) }
+                                div { (t.sender_receiver_place.clone().unwrap_or_default()) }
+                            }
+                            div(class="basis-3/12 text-gray-500") {
+                                div { "Saldo: " (t.account_balance) }
+                                div { "ID: " (t.transaction_reference) }
+                            }
+                            div(class="basis-2/12") {
+                                /*(
+                                  t.tags.clone()
+                                  .unwrap_or_default()
+                                  .split(";")
+                                  .map(move |x| format!("{} ",  x) )
+                                  .collect::<String>()
+                                  )*/
+                                div { (t.comment.clone().unwrap_or_default()) }
+                            }
                         }
                     }
                 }

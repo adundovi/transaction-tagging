@@ -2,12 +2,7 @@ use sycamore::prelude::*;
 use chrono::NaiveDate;
 use num_format::{Locale, ToFormattedString};
 
-use crate::components::{
-    transaction_list::{
-        TransactionProps
-    },
-};
-
+use db::models::transaction::Transaction;
 
 /*
 function getWidth() {
@@ -31,11 +26,17 @@ function getHeight() {
 }
 */
 
+// API that counts visits to the web-page
+const API_BASE_URL: &str = "/api";
 
 #[component]
-pub async fn BalanceGraph<'a, G: Html>(cx: Scope<'a>, props: TransactionProps<'a>) -> View<G> {
-    let transactions = props.transactions.get();
+pub async fn BalanceGraph<'a, G: Html>(cx: Scope<'a>) -> View<G> {
+    
+    let mut transactions = Transaction::get_all(API_BASE_URL).await.unwrap();
+    transactions.sort_by_key(|t| t.value_date);
+    transactions.reverse();
     let transactions_2 = transactions.clone();
+   // let transactions_s = create_signal(cx, transactions);
     
     let start_date = create_signal(cx, NaiveDate::from_ymd(2020, 1, 1));
     let end_date = create_signal(cx, NaiveDate::from_ymd(2020, 12, 31));
