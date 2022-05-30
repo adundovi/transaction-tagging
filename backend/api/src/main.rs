@@ -27,7 +27,7 @@ pub type Pool = SqlitePool;
 async fn get_transactions(
     pool: web::Data<Pool>) -> Result<HttpResponse, actix_web::Error> {
     
-    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB"))?;
+    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB exhausted"))?;
 
     let transactions = Transaction::get_all(&mut conn).await
             .map_err(|_|  actix_web::error::ErrorBadGateway("Query"))?;
@@ -40,7 +40,7 @@ async fn get_transaction_by_id(
     pool: web::Data<Pool>, chunks: web::Path<(u32,)>) -> Result<HttpResponse, actix_web::Error> {
     let chunks = chunks.into_inner();
 
-    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB"))?;
+    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Free connection to DB exhausted"))?;
 
     let transaction = Transaction::get_by_id(&mut conn, chunks.0)
         .map_err(|_|  actix_web::error::ErrorBadGateway("Query")).await?;
@@ -58,7 +58,7 @@ async fn post_transaction_comment_by_id(
     pool: web::Data<Pool>, chunks: web::Path<(u32,)>, data: web::Json<CommentUpdate>) -> Result<HttpResponse, actix_web::Error> {
     let chunks = chunks.into_inner();
 
-    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Cannot connect to DB"))?;
+    let mut conn = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Free connection to DB exhausted"))?;
 
     let transaction = Transaction::set_comment_by_id(&mut conn, chunks.0, &data.comment)
         .map_err(|_|  actix_web::error::ErrorBadGateway("Query")).await?;
@@ -70,7 +70,7 @@ async fn post_transaction_comment_by_id(
 async fn post_csv_with_transactions(
     mut multipart: Multipart, pool: web::Data<Pool>) -> Result<HttpResponse, actix_web::Error> {
 
-    let mut conn: PoolConnection<Sqlite> = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Query"))?;
+    let mut conn: PoolConnection<Sqlite> = pool.try_acquire().ok_or(actix_web::error::ErrorBadGateway("Free connection to DB exhausted"))?;
     let mut bytes = web::BytesMut::new();
 
     while let Some(mut field) = multipart.try_next().await? {
