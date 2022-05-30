@@ -98,7 +98,7 @@ async fn main() -> Result<(), std::io::Error> {
     env_logger::init();
 
     let pool = SqlitePoolOptions::new()
-        .max_connections(5)
+        .max_connections(25)
         .connect("sqlite://sqlite.db").await
         .map_err(|_| std::io::Error::new(
                 std::io::ErrorKind::Other, "Cannot connect to DB"))?;
