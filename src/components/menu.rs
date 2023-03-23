@@ -70,24 +70,24 @@ pub fn MainMenu<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
                     }
                     div(class="flex-1 flex flex-col overflow-y-auto") {
                         nav(class="flex-1 px-2 py-4 bg-gray-800 space-y-1 text-base font-medium") {
-                            MenuItem {
-                                label: "Popis transakcija".to_string(),
-                                route: "/".to_string(),
-                                selected: index_state,
-                                icon: Collection(cx, icon_class)
-                            }
-                            MenuItem {
-                                label: "Vizualizacija".to_string(),
-                                route: "/graphs".to_string(),
-                                selected: graphs_state,
-                                icon: ChartBar(cx, icon_class)
-                            }
-                            MenuItem {
-                                label: "Ažuriranje transakcija".to_string(),
-                                route: "/upload".to_string(),
-                                selected: upload_state,
-                                icon: Upload(cx, icon_class)
-                            }
+                            MenuItem(
+                                label="Popis transakcija".to_string(),
+                                route="/".to_string(),
+                                selected=index_state,
+                                icon=Collection(cx, icon_class)
+                            )
+                            MenuItem(
+                                label="Vizualizacija".to_string(),
+                                route="/graphs".to_string(),
+                                selected=graphs_state,
+                                icon=ChartBar(cx, icon_class)
+                            )
+                            MenuItem(
+                                label="Ažuriranje transakcija".to_string(),
+                                route="/upload".to_string(),
+                                selected=upload_state,
+                                icon=Upload(cx, icon_class)
+                            )
                         }
                     }
                 }

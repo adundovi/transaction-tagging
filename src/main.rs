@@ -32,10 +32,10 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
             (match props.route.get().as_ref() {
                 AppRoutes::Index => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Popis transakcija" }
-                    Suspense {
-                        fallback: view! { cx, 
+                    Suspense(
+                        fallback=view! { cx, 
                             div(class="text-white text-center max-w-full") { "Učitavanje..." }
-                        },
+                }) {
                         TransactionList()
                     }
                 },
@@ -49,10 +49,10 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
                 },
                 AppRoutes::Graphs => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Vizualizacija" }
-                    Suspense {
-                        fallback: view! { cx,
+                    Suspense(
+                        fallback=view! { cx,
                             div(class="text-white text-center max-w-full") { "Učitavanje..." }
-                        },
+                        }) {
                         BalanceGraph()
                     }
                 },
@@ -67,14 +67,14 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
 fn pages<'a, G: Html>(cx: Scope<'a>, route: &'a ReadSignal<AppRoutes>) -> View<G> {
     view! { cx,
         div(class="h-screen flex overflow-hidden") {
-            MainMenu {
-                route: route
-            }
+            MainMenu(
+                route=route
+            )
             div(class="bg-slate-600 w-full overflow-scroll") {
                 div(class="container mx-auto p-4") {
-                    Content {
-                        route: route
-                    }
+                    Content(
+                        route=route
+                    )
                 }
             }
         }
@@ -84,10 +84,10 @@ fn pages<'a, G: Html>(cx: Scope<'a>, route: &'a ReadSignal<AppRoutes>) -> View<G
 #[component]
 fn App<G: Html>(cx: Scope<'_>) -> View<G> {
     view! { cx,
-        Router {
-            integration: HistoryIntegration::new(),
-            view: pages
-        }
+        Router(
+            integration=HistoryIntegration::new(),
+            view=pages
+        )
     }
 }
 

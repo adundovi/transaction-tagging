@@ -139,9 +139,9 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
                 div(class="basis-3/12") { "Iznos / HRK" }
                 div(class="basis-2/12") { "Oznake / Napomena" }
             }
-            Indexed {
-                iterable: &transactions_s,
-                view: |cx, t| view! { cx,
+            Indexed(
+                iterable=&transactions_s,
+                view=|cx, t| view! { cx,
                 a(href=format!("/transaction/{}", t.id)) {
                     div(class="p-2 hover:bg-amber-100") {
                         div(class="flex flex-row gap-4 justify-items-start") {
@@ -193,8 +193,8 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
                         }
                     }
                 }
-                },
-            }
+                }
+                )
         }
     }
     div(class="flex flex-row gap-4 bg-slate-100 mt-3 mb-3 w-full sticky bottom-0 z-50 p-2 border-t") { 

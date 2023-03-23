@@ -1,6 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use sqlx::{
     FromRow,
+    Type,
     types::chrono::NaiveDate,
     Sqlite,
     pool::PoolConnection
@@ -14,6 +15,8 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
 use utils::{date_serializer, currency_serializer_option, currency_serializer};
+
+use super::tag::Tag;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
@@ -37,7 +40,7 @@ pub struct NewCSVTransaction {
     pub sender_receiver_place: Option<String>,
     pub transaction_reference: String,
 }
-            
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(FromRow))]
 pub struct Transaction {
@@ -56,6 +59,8 @@ pub struct Transaction {
     pub transaction_reference: String,
     pub comment: Option<String>,
     pub url: Option<String>,
+    //#[cfg_attr(not(target_arch = "wasm32"), sqlx(default))]
+    //pub tags: Vec<Tag>
 }
 
 impl Default for Transaction {
@@ -76,6 +81,7 @@ impl Default for Transaction {
             transaction_reference: "NaN".to_string(),
             comment: None,
             url: None,
+            //tags: Vec::new()
         }
     }
 }
@@ -89,7 +95,8 @@ impl Transaction {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_all(conn: &mut PoolConnection<Sqlite>) -> Result::<Vec<Transaction>, sqlx::Error> {
         let result = sqlx::query_as::<_, Transaction>(
-            "SELECT * FROM transactions ORDER BY value_date DESC, id DESC")
+            "SELECT * FROM transactions ORDER BY t.value_date DESC, t.id DESC")
+            //"SELECT * FROM transactions AS t LEFT OUTER JOIN tags ON t.id = tags.id ORDER BY t.value_date DESC, t.id DESC")
             .fetch_all(conn).await?;
         Ok(result)
     }

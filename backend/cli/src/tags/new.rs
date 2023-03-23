@@ -14,7 +14,15 @@ use db::models::tag::Tag;
 async fn new_tag(tag: String) -> Result<(), sqlx::Error> {
     let mut conn = SqliteConnectOptions::from_str("sqlite://sqlite.db")?
         .connect().await?;
-   
+
+    /*let n = NewTag {
+        tag: tag,
+        description: None,
+        url: None
+    };
+
+    let _ = Tag::insert(&mut conn, n);*/
+
     let _ = sqlx::query("INSERT OR IGNORE INTO tags
                 (
                     tag,
