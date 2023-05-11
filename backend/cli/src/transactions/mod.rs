@@ -5,6 +5,7 @@ use crate::menu::{Menu, Subcommand};
 
 mod comment;
 mod list;
+mod export;
 mod tags;
 
 pub fn menu<'a>() -> Menu<'a> {
@@ -18,10 +19,21 @@ pub fn menu<'a>() -> Menu<'a> {
     
     let menu_list = Subcommand {
         app: App::new("list")
-            .about("List all transactions"),
+            .about("List transactions")
+            .arg(
+                Arg::new("filter")
+                    .help("Filter transaction")
+            ),
         f: &list::f
     };
     m.push_subcommand("list", menu_list);
+    
+    let menu_export = Subcommand {
+        app: App::new("export")
+            .about("Export transactions"),
+        f: &export::f
+    };
+    m.push_subcommand("export", menu_export);
     
     let menu_tags = Subcommand {
         app: App::new("tags")
