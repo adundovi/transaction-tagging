@@ -5,6 +5,7 @@ use crate::menu::{Menu, Subcommand};
 
 mod new;
 mod import;
+mod convert;
 
 pub fn menu<'a>() -> Menu<'a> {
     let mut m = Menu{
@@ -38,6 +39,13 @@ pub fn menu<'a>() -> Menu<'a> {
             f: &import::f
     };
     m.push_subcommand("import", menu_import);
+    
+    let menu_convert = Subcommand {
+            app: App::new("convert")
+                .about("Convert currency from HRK to EUR")
+            f: &convert::f
+    };
+    m.push_subcommand("convert", menu_convert);
 
     m
 }
