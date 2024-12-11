@@ -95,7 +95,7 @@ impl Transaction {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_all(conn: &mut PoolConnection<Sqlite>) -> Result::<Vec<Transaction>, sqlx::Error> {
         let result = sqlx::query_as::<_, Transaction>(
-            "SELECT * FROM transactions ORDER BY t.value_date DESC, t.id DESC")
+            "SELECT * FROM transactions as t ORDER BY t.value_date DESC, t.id DESC")
             //"SELECT * FROM transactions AS t LEFT OUTER JOIN tags ON t.id = tags.id ORDER BY t.value_date DESC, t.id DESC")
             .fetch_all(conn).await?;
         Ok(result)

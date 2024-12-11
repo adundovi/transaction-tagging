@@ -41,7 +41,7 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
                 },
                 AppRoutes::Transaction(id) => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Detalji transakcije" }
-                    TransactionDetails(id.clone())
+                    TransactionDetails(*id)
                 },
                 AppRoutes::Upload => view! { cx,
                     h1(class="text-xl pt-5 text-white") { "Ažuriranje transakcija" }
@@ -64,6 +64,7 @@ async fn Content<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
     }
 }
 
+#[component]
 fn pages<'a, G: Html>(cx: Scope<'a>, route: &'a ReadSignal<AppRoutes>) -> View<G> {
     view! { cx,
         div(class="h-screen flex overflow-hidden") {

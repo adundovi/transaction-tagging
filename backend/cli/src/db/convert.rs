@@ -3,6 +3,7 @@ use sqlx::Connection;
 use sqlx::ConnectOptions;
 use std::str::FromStr;
 use futures::executor::block_on;
+use sqlx::sqlite::SqlitePoolOptions;
 
 use db::models::transaction::Transaction;
 
