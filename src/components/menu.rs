@@ -1,11 +1,7 @@
 use sycamore::prelude::*;
 use sycamore_router::Route;
 
-use crate::components::icons::{
-    ChartBar,
-    Collection,
-    Upload
-};
+use crate::components::icons::{ChartBar, Collection, Upload};
 
 #[derive(Route)]
 pub enum AppRoutes {
@@ -23,7 +19,7 @@ pub enum AppRoutes {
 
 #[derive(Prop)]
 pub struct RouteProps<'a> {
-    pub route: &'a ReadSignal<AppRoutes>
+    pub route: &'a ReadSignal<AppRoutes>,
 }
 
 #[derive(Prop)]
@@ -31,18 +27,18 @@ pub struct MenuItemProps<'a, G: Html> {
     label: String,
     route: String,
     selected: &'a ReadSignal<bool>,
-    icon: View<G>
+    icon: View<G>,
 }
 
 #[component]
 fn MenuItem<'a, G: Html>(cx: Scope<'a>, props: MenuItemProps<'a, G>) -> View<G> {
-    let selected_class = create_memo(cx, ||
+    let selected_class = create_memo(cx, || {
         if *props.selected.get() {
             "bg-gray-900 text-white"
         } else {
             "text-gray-300 hover:bg-gray-700 hover:text-white"
         }
-    );
+    });
 
     view! { cx,
         a(class=format!("group flex items-center px-2 py-2 rounded-md {}", selected_class), href=props.route) {
@@ -54,10 +50,15 @@ fn MenuItem<'a, G: Html>(cx: Scope<'a>, props: MenuItemProps<'a, G>) -> View<G> 
 
 #[component]
 pub fn MainMenu<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
-
-    let index_state = create_memo(cx, ||  matches!(props.route.get().as_ref(), AppRoutes::Index));
-    let graphs_state = create_memo(cx, ||  matches!(props.route.get().as_ref(), AppRoutes::Graphs));
-    let upload_state = create_memo(cx, ||  matches!(props.route.get().as_ref(), AppRoutes::Upload));
+    let index_state = create_memo(cx, || {
+        matches!(props.route.get().as_ref(), AppRoutes::Index)
+    });
+    let graphs_state = create_memo(cx, || {
+        matches!(props.route.get().as_ref(), AppRoutes::Graphs)
+    });
+    let upload_state = create_memo(cx, || {
+        matches!(props.route.get().as_ref(), AppRoutes::Upload)
+    });
 
     let icon_class = "text-white mr-4 h-6 w-6";
 
@@ -95,4 +96,3 @@ pub fn MainMenu<'a, G: Html>(cx: Scope<'a>, props: RouteProps<'a>) -> View<G> {
         }
     }
 }
-

@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
+use reqwasm::http::Request;
+use serde::{Deserialize, Serialize};
 use sycamore::futures::spawn_local_scoped;
 use sycamore::prelude::*;
 use sycamore::rt::JsCast;
 use web_sys::{Event, KeyboardEvent};
-use reqwasm::http::Request;
 
 use db::models::transaction::Transaction;
 
@@ -35,21 +35,28 @@ pub async fn TransactionDetails<'a, G: Html>(cx: Scope<'a>, id: u32) -> View<G> 
     let send_comment = move |id: u32, comment: Option<String>| {
         spawn_local_scoped(cx, async move {
             let new_comment: Option<String> = comment.map(|s| s.clone());
-            let data = CommentUpdate{ comment: new_comment };
+            let data = CommentUpdate {
+                comment: new_comment,
+            };
             let json = serde_json::to_string(&data).unwrap();
             let url = format!("{}/transactions/{}/comment", API_BASE_URL, id);
             let _resp = Request::post(&url)
                 .header("Content-Type", "application/json")
-                .body(json).send().await.unwrap();
+                .body(json)
+                .send()
+                .await
+                .unwrap();
         })
     };
-    
+
     let comment_save = move |event: Event| {
         let event: KeyboardEvent = event.unchecked_into::<KeyboardEvent>();
         if event.key() == "Enter" {
-            comment.set(
-                if *comment_string_only.get() == "" { None } else { Some((*comment_string_only.get()).clone()) }
-            );
+            comment.set(if *comment_string_only.get() == "" {
+                None
+            } else {
+                Some((*comment_string_only.get()).clone())
+            });
             let s = (*comment.get()).clone();
             send_comment(id, s);
 
@@ -61,13 +68,8 @@ pub async fn TransactionDetails<'a, G: Html>(cx: Scope<'a>, id: u32) -> View<G> 
     };
 
     let updated = Transaction::get_by_id(API_BASE_URL, id).await.unwrap();
-    comment.set(
-        updated
-            .comment.clone()
-    );
-    comment_string_only.set(
-        updated.comment.clone().unwrap_or("".to_string())
-    );
+    comment.set(updated.comment.clone());
+    comment_string_only.set(updated.comment.clone().unwrap_or("".to_string()));
     trans.set(updated);
 
     let t = trans;
@@ -80,7 +82,7 @@ pub async fn TransactionDetails<'a, G: Html>(cx: Scope<'a>, id: u32) -> View<G> 
 
             div(class="w-56") { "Ime pošiljatelja ili primatelja"}
             div{ (t.get().sender_receiver_name.clone().unwrap_or_default()) }
-            
+
             div(class="w-56") { "IBAN pošiljatelja" }
             div{ (t.get().iban_sender) }
 
@@ -100,22 +102,22 @@ pub async fn TransactionDetails<'a, G: Html>(cx: Scope<'a>, id: u32) -> View<G> 
                 })
                 }
             }
-                
+
             div(class="w-56") { "Stanje računa nakon transakcije" }
             div{ (t.get().account_balance) }
-            
+
             div(class="w-56") { "Šifra transakcije"}
             div{ (t.get().receiver_reference_number.clone().unwrap_or_default()) }
 
             div(class="w-56") { "Opis" }
             div{ (t.get().description.clone().unwrap_or_default()) }
-           
+
             div(class="w-56") { "Mjesto pošiljatelja"}
             div{ (t.get().sender_receiver_place.clone().unwrap_or_default()) }
 
             div(class="w-56") { "Referenca transakcijei / ID" }
             div{ (t.get().transaction_reference) "/" (t.get().id) }
-            
+
             div(class="w-56") { "Napomena / Komentar" }
             div(class="p-2 bg-gray-100") {
                 div(class="h-4 cursor-text", ref=comment_display_ref, on:click=comment_edit) {

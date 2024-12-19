@@ -1,6 +1,6 @@
-use sycamore::prelude::*;
 use chrono::NaiveDate;
 use num_format::{Locale, ToFormattedString};
+use sycamore::prelude::*;
 
 use db::models::transaction::Transaction;
 
@@ -33,17 +33,22 @@ const API_BASE_URL: &str = "/api";
 
 #[component]
 pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
-
     let mut transactions = Transaction::get_all(API_BASE_URL).await.unwrap();
     transactions.sort_by_key(|t| t.value_date);
     transactions.reverse();
-//    let transactions_s = create_signal(cx, transactions);
+    //    let transactions_s = create_signal(cx, transactions);
 
     let filter = create_signal(cx, String::new());
     let start_date = create_signal(cx, NaiveDate::from_ymd(2020, 1, 1));
     let end_date = create_signal(cx, NaiveDate::from_ymd(2020, 12, 31));
     let detailed_search = create_signal(cx, false);
-    let hidden_toggle = |s: &ReadSignal<_>| { if *s.get() { return "" } else { return "hidden" } };
+    let hidden_toggle = |s: &ReadSignal<_>| {
+        if *s.get() {
+            return "";
+        } else {
+            return "hidden";
+        }
+    };
 
     start_date.set(transactions.last().unwrap().value_date);
     end_date.set(transactions.first().unwrap().value_date);
@@ -51,45 +56,88 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
     let start_date_str = create_signal(cx, start_date.to_string());
     let end_date_str = create_signal(cx, end_date.to_string());
 
-    let transactions_s = create_memo(cx,move || {
+    let transactions_s = create_memo(cx, move || {
         transactions
             .iter()
             .filter(|t| {
                 let f = &*filter.get().to_lowercase();
-                if !(t.value_date >= *start_date.get() &&
-                    t.value_date <= *end_date.get()) { return false; }
-                if f == "" { return true; }
-                if f.chars().count() < 3 { return true; }
-                if t.sender_receiver_name.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
-                if t.description.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
-                if t.transaction_reference.contains(f) { return true; }
-                if t.iban_sender.to_lowercase().contains(f) { return true; }
-                if t.send_amount.unwrap_or_default().to_string().contains(f) { return true; }
-                if t.receive_amount.unwrap_or_default().to_string().contains(f) { return true; }
-                if t.value_date.to_string().contains(f) { return true; }
-                if t.comment.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
+                if !(t.value_date >= *start_date.get() && t.value_date <= *end_date.get()) {
+                    return false;
+                }
+                if f == "" {
+                    return true;
+                }
+                if f.chars().count() < 3 {
+                    return true;
+                }
+                if t.sender_receiver_name
+                    .clone()
+                    .unwrap_or_default()
+                    .to_lowercase()
+                    .contains(f)
+                {
+                    return true;
+                }
+                if t.description
+                    .clone()
+                    .unwrap_or_default()
+                    .to_lowercase()
+                    .contains(f)
+                {
+                    return true;
+                }
+                if t.transaction_reference.contains(f) {
+                    return true;
+                }
+                if t.iban_sender.to_lowercase().contains(f) {
+                    return true;
+                }
+                if t.send_amount.unwrap_or_default().to_string().contains(f) {
+                    return true;
+                }
+                if t.receive_amount.unwrap_or_default().to_string().contains(f) {
+                    return true;
+                }
+                if t.value_date.to_string().contains(f) {
+                    return true;
+                }
+                if t.comment
+                    .clone()
+                    .unwrap_or_default()
+                    .to_lowercase()
+                    .contains(f)
+                {
+                    return true;
+                }
                 //if t.tags.clone().unwrap_or_default().to_lowercase().contains(f) { return true; }
                 false
             })
-        .cloned()
-        .collect::<Vec<_>>()
+            .cloned()
+            .collect::<Vec<_>>()
     });
     let displayed_transactions = create_memo(cx, move || transactions_s.get().iter().count());
     let transaction_send_sum = create_memo(cx, move || -> f64 {
-        transactions_s.get().iter().map(|t| t.send_amount.unwrap_or(0f64)).sum::<f64>()
+        transactions_s
+            .get()
+            .iter()
+            .map(|t| t.send_amount.unwrap_or(0f64))
+            .sum::<f64>()
     });
     let transaction_receive_sum = create_memo(cx, move || -> f64 {
-        transactions_s.get().iter().map(|t| t.receive_amount.unwrap_or(0f64)).sum::<f64>()
+        transactions_s
+            .get()
+            .iter()
+            .map(|t| t.receive_amount.unwrap_or(0f64))
+            .sum::<f64>()
     });
 
     let open_close_detailed_search = |_| detailed_search.set(!*detailed_search.get());
-    
+
     let pp_currency = |c: f64| -> String {
         let int = (c.trunc() as i64).to_formatted_string(&Locale::hr);
-        let frac = (c.fract()*100.0).abs().round();
+        let frac = (c.fract() * 100.0).abs().round();
         format!("{},{:0>2}", int, frac)
     };
-
 
     view! { cx,
     div(class="flex flex-row-reverse w-full") {
@@ -151,15 +199,15 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
                                 (t.sender_receiver_name.clone().unwrap_or_default())
                             }
                             div(class="basis-3/12") {
-                                (if t.send_amount.is_some() { 
+                                (if t.send_amount.is_some() {
                                     view! { cx, span(class="text-red-500") {
-                                        (t.send_amount.unwrap_or_default()) 
+                                        (t.send_amount.unwrap_or_default())
                                     } }
                                 } else {
                                     view! { cx, span(class="text-green-500") {
                                         (t.receive_amount.unwrap_or_default())
                                     } }
-                                }) 
+                                })
                             }
                             div(class="basis-2/12") { }
                         }
@@ -197,12 +245,12 @@ pub async fn TransactionList<'a, G: Html>(cx: Scope<'a>) -> View<G> {
                 )
         }
     }
-    div(class="flex flex-row gap-4 bg-slate-100 mt-3 mb-3 w-full sticky bottom-0 z-50 p-2 border-t") { 
+    div(class="flex flex-row gap-4 bg-slate-100 mt-3 mb-3 w-full sticky bottom-0 z-50 p-2 border-t") {
         div(class="basis-1/3 font-light") {
             "Razdoblje: " (*start_date.get()) " - " (*end_date.get())
         }
         div(class="basis-1/6 font-light") {
-            "Broj transakcija: " (displayed_transactions.get()) 
+            "Broj transakcija: " (displayed_transactions.get())
         }
         div(class="basis-1/6 text-red-500") {
             "Isplaćeno: " (pp_currency(*transaction_send_sum.get())) " kn"
